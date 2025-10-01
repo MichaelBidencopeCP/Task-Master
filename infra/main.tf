@@ -116,7 +116,7 @@ resource "aws_security_group" "ecs" {
 ##################
 
 resource "aws_ecr_repository" "app" {
-    name = "${var.project}ecr-repo"
+    name = "${var.project}-ecr-repo"
     image_tag_mutability = "MUTABLE"
     image_scanning_configuration {
         scan_on_push = true
@@ -284,7 +284,7 @@ resource "aws_ecs_service" "service_definition" {
 resource "aws_iam_openid_connect_provider" "github" {
     url = "https://token.actions.githubusercontent.com"
     client_id_list = ["sts.amazonaws.com"]
-    thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+    thumbprint_list = ["7560d6f40fa55195f740ee2b1b7c0b4836cbe103"]
 }
 
 resource "aws_iam_role" "github_actions" {
@@ -301,7 +301,7 @@ resource "aws_iam_role" "github_actions" {
                 Condition = {
                     StringEquals = {
                         "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-                        "token.actions.githubusercontent.com:sub" = "repo:MichaelBidencopeCP/*"
+                        "token.actions.githubusercontent.com:sub" = "repo:MichaelBidencopeCP/Task-Master:*"
                     }
                 }
             }
@@ -329,6 +329,34 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
                     "ecr:PutImage"
                 ]
                 Resource = "*"
+            }
+        ]
+    })
+}
+
+resource "aws_iam_role_policy" "github_actions_ecs" {
+    name = "${var.project}-github-actions-ecs-policy"
+    role = aws_iam_role.github_actions.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "ecs:DescribeTaskDefinition",
+                    "ecs:RegisterTaskDefinition",
+                    "ecs:UpdateService",
+                    "ecs:DescribeServices"
+                ]
+                Resource = "*"
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "iam:PassRole"
+                ]
+                Resource = aws_iam_role.ecs_task_execution_role.arn
             }
         ]
     })
