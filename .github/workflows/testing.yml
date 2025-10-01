@@ -23,25 +23,5 @@ jobs:
       - name: Run tests
         run: |
           pytest
-  #deploy:
-  #  needs: testing
-  #  runs-on: ubuntu-latest
-  #  i$f: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #  steps:
-  #    - name: Deploy
-  #      run: echo "Deploying application..."
-  #    - uses: actions/checkout@v4
-  #    
-  #    - name: Deploy to EC2
-  #      uses: appleboy/ssh-action@v1.0.0
-  #      with:
-  #        host: $ {{ secrets.EC2_HOST }}
-  #        username: $ {{ secrets.EC2_USERNAME }}
-  #        key: $ {{ secrets.EC2_SSH_KEY }}
-  #        script: |
-  #          cd /home/ubuntu/fastapi-todo-ci-cd
-  #          git pull origin main
-  #          source venv/bin/activate
-  #          pip install -r requirements.txt
-  #          alembic upgrade head
-  #          sudo systemctl restart fastapi-todo
+  deploy:
+    
