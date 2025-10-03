@@ -51,39 +51,31 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd todo
-          docker build --target prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --target production -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-      - name: Updates ECS service
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ vars.PROJECT_NAME }}-repo
-          IMAGE_TAG: ${{ github.sha }}
+
+      - name: Prepare task definition template
         run: |
-          # Step 1: Get the current task definition JSON from AWS
-          TASK_DEFINITION=$(aws ecs describe-task-definition \
-            --task-definition ${{ vars.PROJECT_NAME }}-task \
-            --query taskDefinition)
-          
-          # Step 2: Use jq to modify the JSON - update the image URL to your new image
-          # Also remove AWS-generated fields that can't be used when registering
-          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-            '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.placementConstraints) | del(.compatibilities) | del(.registeredAt) | del(.registeredBy)')
-          
-          # Step 3: Register this modified JSON as a NEW task definition revision
-          NEW_TASK_DEF_ARN=$(echo $NEW_TASK_DEFINITION | aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
-          
-          # Step 4: Tell the ECS service to use this new task definition
-          # force-new-deployment ensures running tasks are replaced with new ones
-          aws ecs update-service \
-            --cluster ${{ vars.PROJECT_NAME }}-ecs-cluster \
-            --service ${{ vars.PROJECT_NAME }}-service \
-            --task-definition $NEW_TASK_DEF_ARN \
-            --force-new-deployment
-          
-          echo "Deployed task definition: $NEW_TASK_DEF_ARN"
+          sed -i "s/\${AWS_ACCOUNT_ID}/${{ secrets.AWS_ACCOUNT_ID }}/g" task-definition-template.json
+
+      - name: Fill in the new image ID in the task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-template.json
+          container-name: app
+          image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            BUILD_ID=${{ github.sha }}
+            DEPLOY_TIME=${{ github.event.head_commit.timestamp }}
         
+      - name: Deploy to Amazon ECS service
+        id: deploy-ecs
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ vars.PROJECT_NAME }}-service
+          cluster: ${{ vars.PROJECT_NAME }}-ecs-cluster
+          wait-for-service-stability: true
 
