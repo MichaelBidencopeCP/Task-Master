@@ -231,7 +231,7 @@ resource "aws_ecs_task_definition" "task_definition" {
 
     container_definitions = jsonencode([
         {
-            name      = "nginx"
+            name      = "app"
             image     = "nginx:latest"
             essential = true
             portMappings = [
@@ -246,7 +246,7 @@ resource "aws_ecs_task_definition" "task_definition" {
                 options = {
                     awslogs-group         = aws_cloudwatch_log_group.ecs.name
                     awslogs-region        = "us-east-1"
-                    awslogs-stream-prefix = "nginx"
+                    awslogs-stream-prefix = "app"
                 }
             }
         }
@@ -266,7 +266,7 @@ resource "aws_ecs_service" "service_definition" {
     }
     load_balancer {
         target_group_arn = aws_lb_target_group.tg.arn
-        container_name   = "nginx"
+        container_name   = "app"
         container_port   = 80
     }
     depends_on = [aws_lb_listener.http]
