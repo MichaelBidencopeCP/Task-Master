@@ -143,7 +143,7 @@ resource "aws_lb" "alb" {
 
 resource "aws_lb_target_group" "tg" {
     name        = "${var.project}-tg"
-    port        = 80
+    port        = 8000
     protocol    = "HTTP"
     vpc_id      = aws_vpc.main.id
     target_type = "ip"
