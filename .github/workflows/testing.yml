@@ -69,6 +69,7 @@ jobs:
           environment-variables: |
             BUILD_ID=${{ github.sha }}
             DEPLOY_TIME=${{ github.event.head_commit.timestamp }}
+          secrets: "JWT_SECRET=${{ secrets.SECRET_MANAGER_JWT_ARN }}"
         
       - name: Deploy to Amazon ECS service
         id: deploy-ecs
