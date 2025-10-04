@@ -37,3 +37,5 @@ terraform.rc
 # Provider lock file - include if you want consistent provider versions across environments
 # Remove the '#' below if you want to commit this file
 # .terraform.lock.hcl
+
+variables.tf
