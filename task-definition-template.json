@@ -10,6 +10,12 @@
       "name": "app",
       "image": "<IMAGE>",
       "essential": true,
+      "secrets": [
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "<SECRET_MANAGER_JWT_ARN>"
+        }
+      ],
       "portMappings": [
         {
           "containerPort": 80,

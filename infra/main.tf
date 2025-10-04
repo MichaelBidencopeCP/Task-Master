@@ -361,3 +361,21 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
         ]
     })
 }
+
+resource "aws_iam_role_policy" "github_actions_secrets" {
+    name        = "${var.project}-github-actions-secrets-policy"
+    role        = aws_iam_role.github_actions.id
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret"
+                ]
+                Resource = var.secret_manager_jwt_arn
+            }
+        ]
+    })
+}

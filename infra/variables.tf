@@ -18,3 +18,9 @@ variable "health_check_path" {
     #default     = "/api/health"
     default     = "/"
 }
+
+variable "secret_manager_jwt_arn" {
+    description = "ARN of the AWS Secrets Manager secret"
+    type        = string
+    default     = ""
+}
